@@ -1,4 +1,4 @@
-# Format original data from Kolpelke et al. 2016 with R
+# Format original data from Kolpelke et al. 2017 with R
 
 This document explains how to reshape the original dataset from Kolpelke et al. 2016, and then explore and manipulate the new data structure. This document is not intended to be a description of the dataset, we rather provide lines of code to import and handle the dataset in the statistical language R. Notably, we split the data set into di erent  les for which primary keys are assigned (i.e. unique identi er) allowing us to easily retrieve pieces of information from each  les. We exemplify the handling of the data and we further show how to obtain a quick map and how to use the data for network analyses.
 
