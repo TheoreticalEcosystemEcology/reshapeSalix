@@ -1,0 +1,346 @@
+---
+title: Format original data from Kolpelke et al. 2016 with R
+author: By Jens-Peter Kopelke, Tommi Nyman, Kevin Cazelles, Dominique Gravel, Steve Vissault and Tomas Roslin
+date: November 18, 2016
+output:
+  word_document:
+    highlight: tango
+  pdf_document:
+    highlight: tango
+    number_sections: true
+
+abstract: "For conciseness, the data are offered as a single spreadsheet with its variables defined in section B (above). To provide the tools for the correct import of this complex data set in R, for reshaping the spreadsheet format as a series of relational objects, and for exploring the resulting data structure, we here provide R code for the benefit of the data user. The approach is based on splitting the data set into different files for which primary keys (i.e. unique identifiers) are assigned, thus allowing the user to easily retrieve pieces of information from each files. Below, we offer examples of how to handle the data, how to obtain a quick map and how to use the data for network analyses."
+---
+
+
+# R and add-on packages
+
+For this purpose, we use R (version >= 3.2; R Core Team 2016) and the following set of add-on packages:
+
+|packages | version |
+|:--------|:--------|
+|bipartite| 2.07    |
+|dismo    | 1.1-1   |
+|igraph   | 1.0.1   |
+|magrittr | 1.5     |
+|rgdal    | 1.1.10  |
+|raster   | 2.5.8   |
+|reshape2 | 1.4.2   |
+|sp       | 1.2.3   |
+: Add-on packages used.
+
+
+To run the following lines of code properly, the above packages must first be installed. For instance, to function used to reshape the data set requires function from the *magrittr* package to be installed and loaded. The code below install this specific package if not available, the user can do the same for all the packages listed above.
+
+
+```{r, eval=FALSE}
+if(!require(magrittr)) install.packages(magrittr)
+library(magrittr)
+```
+
+
+
+# Reshaping the original dataset
+
+The original dataset can be reshaped as follows:
+
+Cleaning the existing `./csv/` and `./rdata/` folders if any,
+
+```{r eval=FALSE}
+unlink("./csv", recursive = TRUE)
+unlink("./rdata", recursive = TRUE)
+```
+
+Importing the R script which contains the reshaping function:
+
+```{r}
+source("./lib/format4R.r")
+```
+
+Applying the reshaping function to the original dataset:
+
+```{r}
+get_formatData("./Salix_webs.csv")
+```
+
+Two new folders have now been created (```./csv/``` and ```./rdata/```) in your working directory, within which six files have been added with the following contents:
+
+
+```{r, echo=FALSE}
+ord <- c(6,5,1,3,2,4)
+files <- list.files('./rdata',full.names=TRUE)[ord]
+len <- numeric()
+
+for(file in files){
+  len <- append(len,nrow(readRDS(file)))
+}
+
+fnames <- list.files('./rdata')[ord]
+fnames <- do.call("c",lapply(strsplit(fnames,"[.]"),function(x) return(x[1])))
+
+df <- data.frame(File=fnames, row=len, description = c(
+  "Location and of the sites", "Information on willow nodes",
+  "Information on sawfly nodes", "Information on parasitoids nodes",
+  "Interactions details among each node (willows, gallers, sawflies)",
+  "Supplementary information on the interaction among willows and gallers"))
+knitr::kable(df, format="markdown", caption="List of data frames obtained.")
+```
+
+# Exploring the new data structure
+
+
+## Sampling sites
+
+The next few lines will import and display the structure of the file describing the sampling units (i.e. file ./rdata/df_site.rds).
+
+
+```{r}
+df_site <- readRDS("./rdata/df_site.rds")
+str(df_site, strict.width="cut")
+```
+
+In this file, each row refers to a willow species sampled at a specific time (`YEAR_OF COLL`) in a given location (`SITE`). The field `REARING NUMBER` is the primary key of this table, and thus points to a unique record.
+
+
+## Nodes
+
+The command lines below will import and display the structure of the tables (available in `./rdata`) associated with the different levels of the network.
+
+### Willow species (`df_salix.rds`)
+
+```{r}
+df_salix <- readRDS("./rdata/df_salix.rds")
+str(df_salix, strict.width="cut")
+```
+
+This file contains information on the Salix species, with `RSAL` as its unique identifier (primary key).
+
+
+### Galler species (`df_galler.rds`)
+
+
+```{r}
+df_galler <- readRDS("./rdata/df_galler.rds")
+str(df_galler, strict.width="cut")
+```
+
+This file contains information on galler species, with `RGALLER` as its unique identifier.
+
+
+
+### Parasitoid species (`df_parasit.rds`)
+
+
+```{r}
+df_parasit <- readRDS("./rdata/df_parasit.rds")
+str(df_parasit, strict.width="cut")
+```
+
+This file contains information on parasitoid species, with `RPAR` as its unique identifier.
+
+## Links
+
+```{r}
+df_interact <- readRDS("./rdata/df_interact.rds")
+str(df_interact, strict.width="cut")
+```
+
+This file provides information of the interaction among gallers, willows and parasitoids. Here, `RSAL`, `RGALLER` and `RPAR` are foreign keys allowing us to retrieve information from files `df_salix`, `df_galler` and `df_parasit`, respectively.
+
+
+
+```{r}
+df_salix_galler <- readRDS("./rdata/df_salix_galler.rds")
+str(df_salix_galler, strict.width="cut")
+```
+
+This file provides supplementary information on interactions among *Salix* species and sawflies species.
+
+# Manipulation of files containing nodes and links files
+
+## Binding files together
+
+```{r}
+  df_site <- readRDS("./rdata/df_site.rds")
+  df_interact <- readRDS("./rdata/df_interact.rds")
+  site_interact <- merge(df_site, df_interact, by="REARING_NUMBER")
+  head(site_interact)
+```
+
+To include taxonomic information on, for instance, sawflies, we have to merge `df_galler` with `site_interact` using the shared key RGALLER.
+
+```{r}
+  df_galler <- readRDS("./rdata/df_galler.rds")
+  site_interact_wth_taxo <- merge(site_interact, df_galler, by="RGALLER")
+  head(site_interact_wth_taxo)
+```
+
+## B. Turning into matrices
+
+The package `reshape2` allows us to turn long data formats into simple matrices.
+
+```{r}
+if(!require(reshape2)){install.packages(reshape2);library(reshape2)}
+```
+
+### Community matrix
+
+To build a community matrix detailing which species of willows are present in a specific year at a specific site, we write
+
+```{r}
+commat_willows <- dcast(SITE+YEAR_OF_COLL~RSAL,data=site_interact,fun.aggregate=length,
+  value.var="RSAL")
+head(commat_willows[,1:7])
+```
+To achieve a similar tabulation of sawflies present at a specific site in a specific year, we use
+
+```{r}
+commat_gallers <- dcast(SITE+YEAR_OF_COLL~RGALLER,data=site_interact,fun.aggregate=length,
+  value.var="RGALLER")
+head(commat_gallers[,1:7])
+```
+
+
+To generate an interaction matrix among willows and sawflies, we use
+
+
+```{r}
+df_interact <- readRDS("./rdata/df_interact.rds")
+sal_vs_gall <- dcast(RSAL~RGALLER,data=df_interact,fun.aggregate=sum,
+  value.var="N_GALLS")
+head(sal_vs_gall[,1:7])
+```
+
+To generate an interaction matrix among sawflies and parasitoids, we write
+
+```{r}
+df_interact <- readRDS("./rdata/df_interact.rds")
+gall_vs_par <- dcast(RGALLER~RPAR,data=df_interact,fun.aggregate=sum,
+  value.var="NB_GALLS_PAR")
+head(gall_vs_par[,1:7])
+```
+
+
+
+## Mapping sites
+
+Here we show how to derive the map of the sampling, as shown in Fig. 1A (above).
+
+We first load the packages needed and import the data set:
+
+
+```{r, echo=FALSE}
+knitr::read_chunk("lib/map.r")
+```
+
+
+```{r}
+<<settingmaps>>
+```
+
+We then convert the sites into a spatial object (as described in the sp package):
+
+```{r}
+<<tospatialobject>>
+```
+
+We adopt a background map available on-line and add our points on top of it:
+
+
+<!-- ```{r fig.align='center'} -->
+```{r, dpi=300}
+<<quickmap>>
+```
+
+## Number of times the sites are visited
+
+We are now able to easily retrieve the number of times a site is visited.
+Below we do do and display the barplot associated.
+
+```{r, dpi=300}
+<<visit>>
+```
+
+
+
+## Extracting environmental data from `WorldClim`
+
+Converting sites into R spatial object (sp package) offers the possibility to gather environmental data from WorldClim (http://www.worldclim.org/) using the `raster` package. For instance, to retrieve the bioclimatic variables at each site:
+
+We first download the bioclimatic rasters and then extract the values at each site location (using the `sp_site` spatial object previously created).
+
+```{r}
+<<get>>
+```
+As result, we obtain a dataframe wherein each column corresponds to a bioclimatic variables (http://worldclim.org/bioclim) and each row is a specific site:
+
+```{r}
+<<merge>>
+```
+
+
+## Interaction networks
+
+We next show how to prepare the data to be used in R packages dedicated to network analyses. For this, we first load additional packages:
+
+
+```{r, echo=FALSE}
+knitr::read_chunk("lib/metaweb.r")
+```
+
+```{r}
+<<settingweb>>
+```
+
+### Using the 'bipartite' package
+
+
+The lines below creates a contingency table suited for the 'bipartite' package.
+
+```{r}
+<<bipartite1>>
+```
+
+As an example of the information to be extracted, we compute the C-score using the same package:
+
+
+```{r}
+<<bipartite2>>
+```
+
+
+<!-- ```{r}
+<<bipartite3>>
+``` -->
+
+
+### Using 'igraph'
+
+
+We here create the metaweb, *i.e* the network including all the interactions described in the dataset. First, we create two networks, one for associations between plants and herbivores, and one for associations between herbivores and their parasitoids, respectively:
+
+
+```{r}
+<<metaweb1>>
+```
+
+Then we combine the two networks:
+
+
+```{r}
+<<metaweb3>>
+```
+
+As an example of the information contained by these matrices, we compute the degree for (*i.e.* number of species associated with) each *Salix* species.
+
+
+```{r}
+<<metaweb4>>
+```
+
+
+# References
+
+1. R Core Team (2016). R: A language and environment for statistical
+computing. R Foundation for Statistical Computing, Vienna, Austria.
+URL https://www.R-project.org/.
