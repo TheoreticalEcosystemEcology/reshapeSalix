@@ -60,7 +60,7 @@ source("./lib/format4R.r")
 Applying the reshaping function to the original dataset:
 
 ```{r}
-get_formatData("./Salix_webs.csv")
+get_formatData("./data/Salix_webs.csv")
 ```
 
 Two new folders have now been created (```./csv/``` and ```./rdata/```) in your working directory, within which six files have been added with the following contents:
@@ -269,12 +269,12 @@ Converting sites into R spatial object (sp package) offers the possibility to ga
 
 We first download the bioclimatic rasters and then extract the values at each site location (using the `sp_site` spatial object previously created).
 
-```{r}
+```{r, eval=FALSE}
 <<get>>
 ```
 As result, we obtain a dataframe wherein each column corresponds to a bioclimatic variables (http://worldclim.org/bioclim) and each row is a specific site:
 
-```{r}
+```{r, eval=FALSE}
 <<merge>>
 ```
 
