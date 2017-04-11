@@ -1,14 +1,9 @@
-#######################################
-#### SETTINGS
-
-##-- Packages
+## These are chunks of code used within the summary.Rmd Document
 
 ## @knitr settingweb
 library(igraph)
 library(bipartite)
 df_interact <- readRDS("rdata/df_interact.Rds")
-
-
 
 ## @knitr bipartite1
 bip_salgal <- df_interact[,c("RSAL","RGALLER")] %>% table

@@ -1,5 +1,5 @@
+## These are chunks of code used within the summary.Rmd Document
 
-##-- Packages
 ## @knitr settingmaps
 library(rgdal)
 library(raster)

@@ -1,7 +1,8 @@
-####################################### SETTINGS
-## Create output folders
 
-##-- Functions
+#### SETTINGS
+######################################
+
+## Create output folders
 mymkdir <-  . %>% {dir.create(. , showWarnings = FALSE)}
 tonumeric <- . %>% sub(pat = ",", rep = ".") %>% as.numeric
 mysave <- function(obj, file) {
@@ -9,14 +10,18 @@ mysave <- function(obj, file) {
   write.csv2(obj, paste0("./csv/", file, ".csv"))
 }
 
-
-## Creating folders
+## Creating output folders
 flds <- c("rdata", "csv") %T>% sapply(mymkdir)
 
-## Cleaning the folders
+## Cleaning existing file folders
 file.remove(list.files(path="./rdata", full.names=T, pattern="*.rds"))
 file.remove(list.files(path="./csv", full.names=T, pattern="*.csv"))
 
+#### Main function
+######################################
+
+# get_formatData. Please read
+# The only argument "filename" is the dataset (Salix_webs.csv available in the data folder).
 
 get_formatData <- function(filename) {
     ####################################### IMPORTING DATA
@@ -39,7 +44,7 @@ get_formatData <- function(filename) {
 
     ####################################### SPECIES
 
-    ## NB: We do not have the same amount of information for all level.  I therefore
+    ## NB: We do not have the same amount of information for all level. I therefore
     ## used three different dataframes fot the three level of the web.
 
 
@@ -69,13 +74,14 @@ get_formatData <- function(filename) {
     df_galler <- df_galler[, c(4, 1:3, 5:7)]
 
 
-    ####################################### SALIX INDIVIDUALS Unique site x visit (physically speaking)
+    ####################################### SALIX INDIVIDUALS Unique site x visit
     df_site <- df_sal_gal[, c(2, 1, 3:9)] %>% unique
     rownames(df_site) <- NULL
 
 
     ####################################### INTERACTIONS
     ##-- A- SALIX-GALLER
+
     sal_gal <- df_sal_gal[, c(2:3, 19:24)]
     #
     id_salix <- sapply(df_sal_gal$SALIX, . %>% equals(df_salix$SPECIES, .) %>% which) %>%
@@ -85,12 +91,12 @@ get_formatData <- function(filename) {
     #
     df_salix_galler <- cbind(RSAL = df_salix$RSAL[id_salix],
        RGALLER = df_galler$RGALLER[id_galler], sal_gal)
+
     ##-- B- SALIX-GALLER-PARASITOID
     df_tmp <- df_salix_galler[, 1:5]
     df_tmp$RPAR <- ""
     df_tmp$NB_GALLS_PAR <- 0
-    # The number of parasitized gall is given by : apply(mat_par_gal, 1, sum) Below,
-    # I'll do similar dataframes for all interactions parasit/gallers
+
     k <- 0
     ls_inter <- list()
     for (i in 1:nrow(df_tmp)) {
