@@ -17,16 +17,16 @@ abstract: "For conciseness, the data are offered as a single spreadsheet with it
 
 For this purpose, we use R (version >= 3.2; R Core Team 2016) and the following set of add-on packages:
 
-|packages | version |
-|:--------|:--------|
-|bipartite| 2.07    |
-|dismo    | 1.1-1   |
-|igraph   | 1.0.1   |
-|magrittr | 1.5     |
-|rgdal    | 1.1.10  |
-|raster   | 2.5.8   |
-|reshape2 | 1.4.2   |
-|sp       | 1.2.3   |
+| packages  | version |
+|:----------|:--------|
+| bipartite | 2.07    |
+| dismo     | 1.1-1   |
+| igraph    | 1.0.1   |
+| magrittr  | 1.5     |
+| rgdal     | 1.1.10  |
+| raster    | 2.5.8   |
+| reshape2  | 1.4.2   |
+| sp        | 1.2.3   |
 : Add-on packages used.
 
 
@@ -34,7 +34,7 @@ To run the following lines of code properly, the above packages must first be in
 
 
 ```{r, eval=FALSE}
-if(!require(magrittr)) install.packages(magrittr)
+if(!require(magrittr)) install.packages("magrittr")
 library(magrittr)
 ```
 

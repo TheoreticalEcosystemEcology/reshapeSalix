@@ -10,7 +10,7 @@ This document explains how to reshape the original dataset from Kolpelke et al. 
 
 ```r
 setwd("path/to/the/Salix/folder")
-install.packages(rmarkdown)
+install.packages("rmarkdown")
 rmarkdown::render("summary.Rmd", output_format = "all")
 ```
 
