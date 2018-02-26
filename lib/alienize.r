@@ -9,7 +9,7 @@ library(taxize)
 
 ## Use formated data
 source("lib/format4R.r")
-get_formatData("./data/Salix_webs.csv")
+get_formatData("data/Salix_webs.csv")
 
 df_galler <- readRDS("rdata/df_galler.rds")
 df_parasit <- readRDS("rdata/df_parasit.rds")
@@ -78,12 +78,13 @@ df_parasit$RESOLVED[grepl(df_galler$SPECIES, pat="sp\\.")] <- "Genus"
 df_galler$RESOLVED[grepl(df_galler$SPECIES, pat="\\?")] <- "Genus"
 
 ##
-names(df_parasit)[1] <- "idNodes"
-names(df_galler)[1] <- "idNodes"
-names(df_salix)[1] <- "idNodes"
-names(df_galler)[7] <- "CODE_GALLTYPE_SIMPLE"
-names(df_parasit)[7:10] <- c("PAR_INQ", "ENDO_ECTO", "KOINO_IDIO", "TARGETED_LIFESTAGE")
+names(df_parasit)[1L] <- "idNodes"
+names(df_galler)[1L] <- "idNodes"
+names(df_salix)[1L] <- "idNodes"
+names(df_galler)[7L] <- "CODE_GALLTYPE_SIMPLE"
+names(df_parasit)[7L:10L] <- c("PAR_INQ", "ENDO_ECTO", "KOINO_IDIO", "TARGETED_LIFESTAGE")
 
+##
 df_parasit$CODE_GALLTYPE_SIMPLE <- df_salix$CODE_GALLTYPE_SIMPLE <- NA_character_
 df_salix$PAR_INQ <- df_galler$PAR_INQ <- NA_character_
 df_salix$ENDO_ECTO <- df_galler$ENDO_ECTO <- NA_character_
@@ -104,11 +105,10 @@ dfNodes <- rbind(
 
 ######################### Building dfSite
 dfSite <- df_site[, c('SITE', 'NDECDEG', 'EDECDEG', 'COUNTRY', 'REGION')] %>% unique
-dfSite$idSite <- paste0("site", sprintf("%03d", 1:nrow(df_site2)))
+dfSite$idSite <- paste0("site", sprintf("%03d", 1:nrow(dfSite)))
 rownames(dfSite) <- NULL
 dfSite <- dfSite[, c(6,1:3,5,4)]
 #### add idSite to df_site
-
 df_site$idSite <- df_intract$idSite <- ""
 for (i in 1:nrow(df_site)) {
   sco <- (dfSite[, 'SITE'] == df_site[i, 'SITE']) +
@@ -135,8 +135,8 @@ int_par <- df_intract[, c("RGALLER", "RPAR", "NB_GALLS_PAR", "idSite")] %>% uniq
 
 int_par <- int_par[ -which(int_par$RPAR=="none"),]
 
-names(int_gal)[1:3] <- c("idFrom", "idTo", "value")
-names(int_par)[1:3] <- c("idFrom", "idTo", "value")
+names(int_gal)[1L:3L] <- c("idFrom", "idTo", "value")
+names(int_par)[1L:3L] <- c("idFrom", "idTo", "value")
 
 dfEdges <- rbind(int_gal, int_par)
 
@@ -145,8 +145,13 @@ dfEdges <- rbind(int_gal, int_par)
 ######################### SAVING THA DATA
 dfSite$SITE %<>% stri_trans_general("latin-ascii")
 dfSite$REGION %<>% stri_trans_general("latin-ascii")
-kopelke <- alienData(dfNodes, dfEdges, trait = 7:13, taxo = c(2:6), dfSite = dfSite)
-save(kopelke, file='kopelke.rda', compress='xz', ascii=TRUE)
+
+
+########
+source("lib/netCoocData.R")
+salix <- netCoocData(dfNodes, dfEdges, trait = 7:13, taxo = c(2:6), dfSite = dfSite)
+# alienData
+save(salix, file='salix.rda', compress='xz', ascii=TRUE)
 # # devtools::use_data(sal, salix)
 # # save(salix, file="salix.Rda")
 # # save(bartomeus, file='bartomeus.rda', compress='xz')
